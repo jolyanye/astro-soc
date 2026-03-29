@@ -6,7 +6,7 @@ module mini_tpu_core #(
     input logic signed [7:0] i_weight [ARRAY_SIZE][ARRAY_SIZE],
     input logic signed [7:0] i_flat_act [ARRAY_SIZE],
     input logic signed [23:0] i_psum_top [ARRAY_SIZE],
-    input logic signed [23:0] o_psum_bot [ARRAY_SIZE]
+    output logic signed [23:0] o_psum_bot [ARRAY_SIZE]
 );
     logic signed [7:0] w_skewed_act [ARRAY_SIZE];
     logic signed [7:0] w_act_garbage [ARRAY_SIZE];
