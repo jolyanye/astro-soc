@@ -11,11 +11,16 @@ module processing_element (
     output logic signed [7:0] o_act_right,
     output logic signed [23:0] o_psum_bot
 );
-    logic signed [15:0] mult_res;
     logic signed [23:0] next_psum;
 
-    assign mult_res = i_weight * i_act_left;
-    assign next_psum = i_psum_top + mult_res;
+    // Sparse bypass MUX
+    always_comb begin
+        if (i_act_left == 8'd0) begin
+            next_psum = i_psum_top;
+        end else begin
+            next_psum = i_psum_top + i_weight * i_act_left;
+        end
+    end
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
