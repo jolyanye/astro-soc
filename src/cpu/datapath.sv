@@ -14,7 +14,7 @@ module datapath (
     // ******************
     // PC update
     logic [31:0] PCNext;
-    assign PCNext = PC + 32'd4;  // each instr is 32 bits (4 bytes), each address fits 8 bits (1 byte) -> 4 addresses needed for each instr
+    assign PCNext = PC + 32'd4;  // each instr is 4 bytes, each address fits 1 byte -> 4 addresses for each instr
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -174,13 +174,12 @@ module datapath (
     // ******************
     // MEMORY STAGE
     // ******************
-    // Wire up the external ports we added at the top
     assign ALUResult_M_out = ALUResult_M;
     assign WriteData_M_out = WriteData_M;
     assign MemWrite_M_out  = MemWrite_M;
 
     // ******************
-    // MEM/WB REGISTER (The Final Wall)
+    // MEM/WB REGISTER
     // ******************
     logic [31:0] ALUResult_W;
     logic [31:0] ReadData_W;
