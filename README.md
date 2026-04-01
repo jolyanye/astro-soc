@@ -1,1 +1,1 @@
-# npu-lite
+# ASTRO-TPU SoC
