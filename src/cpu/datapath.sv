@@ -16,10 +16,12 @@ module datapath (
     logic [31:0] PCNext;
     assign PCNext = PC + 32'd4;  // each instr is 4 bytes, each address fits 1 byte -> 4 addresses for each instr
 
+    logic Stall_F;
+
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             PC <= 32'd0;
-        end else begin
+        end else if (!Stall_F) begin
             PC <= PCNext;
         end
     end
@@ -29,12 +31,13 @@ module datapath (
     // ******************
     logic [31:0] instr_D;
     logic [31:0] PC_D;
+    logic Stall_D;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
             instr_D <= 32'd0;
             PC_D <= 32'd0;
-        end else begin
+        end else if (!Stall_D) begin
             instr_D <= instr;
             PC_D <= PC;
         end
@@ -94,6 +97,19 @@ module datapath (
         .ResultSrc(ResultSrc_D)
     );
 
+    // Hazard unit
+    logic Flush_E;
+
+    hazard_unit hu_inst (
+        .rs1_D(rs1),
+        .rs2_D(rs2),
+        .rd_E(rd_target_E),
+        .ResultSrc_E(ResultSrc_E),
+        .StallF(Stall_F),
+        .StallD(Stall_D),
+        .FlushE(Flush_E)
+    );
+
     // ******************
     // ID/EX REGISTER
     // ******************
@@ -108,7 +124,7 @@ module datapath (
     logic [4:0] rd_target_W;
 
     always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+        if (!rst_n || Flush_E) begin
             rd1_E <= 32'd0;
             rd2_E <= 32'd0;
             ImmExt_E <= 32'd0;
