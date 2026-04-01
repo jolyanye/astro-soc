@@ -102,6 +102,10 @@ module datapath (
     logic RegWrite_E, ALUSrc_E;
     logic [2:0] ALUControl_E;
     logic MemWrite_E, ResultSrc_E;
+    logic [4:0] rs1_E, rs2_E;
+    logic [4:0] rd_target_M;
+    logic RegWrite_M;
+    logic [4:0] rd_target_W;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -114,6 +118,8 @@ module datapath (
             ALUControl_E <= 3'd0;
             MemWrite_E  <= 1'b0;
             ResultSrc_E <= 1'b0;
+            rs1_E <= 5'd0;
+            rs2_E <= 5'd0;
         end else begin
             rd1_E <= rd1_D;
             rd2_E <= rd2_D;
@@ -124,20 +130,60 @@ module datapath (
             ALUControl_E <= ALUControl_D;
             MemWrite_E  <= MemWrite_D;
             ResultSrc_E <= ResultSrc_D;
+            rs1_E <= rs1;
+            rs2_E <= rs2;
         end
     end
 
     // ******************
     // EXECUTE STAGE
     // ******************
+    // Forwarding unit
+    logic [1:0] ForwardA_E, ForwardB_E;
+
+    forwarding_unit fu_inst (
+        .rs1_E(rs1_E),
+        .rs2_E(rs2_E),
+        .rd_M(rd_target_M),
+        .RegWrite_M(RegWrite_M),
+        .rd_W(rd_target_W),
+        .RegWrite_W(RegWrite_W),
+        .ForwardA(ForwardA_E),
+        .ForwardB(ForwardB_E)
+    );
+
+    // ForwardA MUX
+    logic [31:0] SrcA_E;
+    always_comb begin
+        case (ForwardA_E)
+            2'b00: SrcA_E = rd1_E;
+            2'b10: SrcA_E = ALUResult_M;
+            2'b01: SrcA_E = Result_W;
+            default: SrcA_E = rd1_E;
+        endcase
+    end
+
+    // ForwardB MUX
+    logic [31:0] WriteData_E;
+    always_comb begin
+        case (ForwardB_E)
+            2'b00: WriteData_E = rd2_E;
+            2'b10: WriteData_E = ALUResult_M;
+            2'b01: WriteData_E = Result_W;
+            default: WriteData_E = rd2_E;
+        endcase
+    end
+
+    // ALU Src2 MUX - immediate vs reg
+    logic [31:0] SrcB_E;
+    assign SrcB_E = ALUSrc_E ? ImmExt_E : WriteData_E;
+
     // ALU
     logic [31:0] ALUResult_E;
-    logic [31:0] SrcB_E;
     logic Zero_E;
-    assign SrcB_E = ALUSrc_E ? ImmExt_E : rd2_E;
 
     alu alu_inst (
-        .SrcA(rd1_E),
+        .SrcA(SrcA_E),
         .SrcB(SrcB_E),
         .ALUControl(ALUControl_E),
         .ALUResult(ALUResult_E),
@@ -149,8 +195,6 @@ module datapath (
     // ******************
     logic [31:0] ALUResult_M;
     logic [31:0] WriteData_M;
-    logic [4:0] rd_target_M;
-    logic RegWrite_M;
     logic MemWrite_M, ResultSrc_M;
 
     always_ff @(posedge clk or negedge rst_n) begin
@@ -163,7 +207,7 @@ module datapath (
             ResultSrc_M <= 1'b0;
         end else begin
             ALUResult_M <= ALUResult_E;
-            WriteData_M <= rd2_E;
+            WriteData_M <= WriteData_E;
             rd_target_M <= rd_target_E;
             RegWrite_M <= RegWrite_E;
             MemWrite_M  <= MemWrite_E;
@@ -183,7 +227,6 @@ module datapath (
     // ******************
     logic [31:0] ALUResult_W;
     logic [31:0] ReadData_W;
-    logic [4:0] rd_target_W;
     logic ResultSrc_W;
 
     always_ff @(posedge clk or negedge rst_n) begin
