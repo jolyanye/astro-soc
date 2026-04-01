@@ -12,11 +12,13 @@ module datapath (
     // ******************
     // FETCH STAGE
     // ******************
-    // PC update
     logic [31:0] PCNext;
-    assign PCNext = PC + 32'd4;  // each instr is 4 bytes, each address fits 1 byte -> 4 addresses for each instr
-
     logic Stall_F;
+    logic [31:0] PCTarget_E;
+    logic PCSrc_E;
+
+    // PC update
+    assign PCNext = PCSrc_E ? PCTarget_E : (PC + 32'd4);  // each instr is 4 bytes, each address fits 1 byte -> 4 addresses for each instr
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n) begin
@@ -32,9 +34,10 @@ module datapath (
     logic [31:0] instr_D;
     logic [31:0] PC_D;
     logic Stall_D;
+    logic Flush_D;
 
     always_ff @(posedge clk or negedge rst_n) begin
-        if (!rst_n) begin
+        if (!rst_n || Flush_D) begin
             instr_D <= 32'd0;
             PC_D <= 32'd0;
         end else if (!Stall_D) begin
@@ -85,6 +88,7 @@ module datapath (
     logic [2:0] ALUControl_D;
     logic MemWrite_D;
     logic ResultSrc_D;
+    logic Branch_D;
 
     control_unit control_inst (
         .op(op),
@@ -94,7 +98,8 @@ module datapath (
         .ALUSrc(ALUSrc_D),
         .ALUControl(ALUControl_D),
         .MemWrite(MemWrite_D),
-        .ResultSrc(ResultSrc_D)
+        .ResultSrc(ResultSrc_D),
+        .Branch(Branch_D)
     );
 
     // Hazard unit
@@ -107,6 +112,7 @@ module datapath (
         .ResultSrc_E(ResultSrc_E),
         .StallF(Stall_F),
         .StallD(Stall_D),
+        .FlushD(Flush_D),
         .FlushE(Flush_E)
     );
 
@@ -122,6 +128,8 @@ module datapath (
     logic [4:0] rd_target_M;
     logic RegWrite_M;
     logic [4:0] rd_target_W;
+    logic [31:0] PC_E;
+    logic Branch_E;
 
     always_ff @(posedge clk or negedge rst_n) begin
         if (!rst_n || Flush_E) begin
@@ -136,6 +144,8 @@ module datapath (
             ResultSrc_E <= 1'b0;
             rs1_E <= 5'd0;
             rs2_E <= 5'd0;
+            PC_E <= 32'd0;
+            Branch_E <= 1'b0;
         end else begin
             rd1_E <= rd1_D;
             rd2_E <= rd2_D;
@@ -148,6 +158,8 @@ module datapath (
             ResultSrc_E <= ResultSrc_D;
             rs1_E <= rs1;
             rs2_E <= rs2;
+            PC_E <= PC_D;
+            Branch_E <= Branch_D;
         end
     end
 
@@ -205,6 +217,9 @@ module datapath (
         .ALUResult(ALUResult_E),
         .Zero(Zero_E)
     );
+
+    assign PCTarget_E = PC_E + ImmExt_E;
+    assign PCSrc_E = Branch_E & Zero_E;
 
     // ******************
     // EX/MEM REGISTER

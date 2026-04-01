@@ -6,7 +6,8 @@ module control_unit (
     output logic RegWrite,
     output logic [2:0] ALUControl,
     output logic MemWrite,
-    output logic ResultSrc  // store to rf - 1: memory data, 0: ALU result
+    output logic ResultSrc,  // store to rf - 1: memory data, 0: ALU result
+    output logic Branch
 );
     localparam [2:0] OP_ADD = 3'b000;
     localparam [2:0] OP_SUB = 3'b001;
@@ -19,6 +20,7 @@ module control_unit (
         ALUControl = OP_ADD;
         MemWrite = 1'b0;
         ResultSrc = 1'b0;
+        Branch = 1'b0;
 
         case (op)
             // R-Type Instructions (ADD, SUB, AND, OR)
@@ -27,6 +29,7 @@ module control_unit (
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 ResultSrc = 1'b0;
+                Branch = 1'b0;
                 case (funct3)
                     3'b000: ALUControl = (funct7_5) ? OP_SUB : OP_ADD;
                     3'b110: ALUControl = OP_OR;
@@ -41,6 +44,7 @@ module control_unit (
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
                 ResultSrc = 1'b0;
+                Branch = 1'b0;
                 ALUControl = OP_ADD;
             end
 
@@ -49,7 +53,8 @@ module control_unit (
                 ALUSrc = 1'b1; 
                 RegWrite = 1'b1;
                 MemWrite = 1'b0;
-                ResultSrc = 1'b1; 
+                ResultSrc = 1'b1;
+                Branch = 1'b0;
                 ALUControl = OP_ADD;
             end
 
@@ -58,15 +63,27 @@ module control_unit (
                 ALUSrc = 1'b1; 
                 RegWrite = 1'b0;
                 MemWrite = 1'b1;
-                ResultSrc = 1'b0; 
+                ResultSrc = 1'b0;
+                Branch = 1'b0;
                 ALUControl = OP_ADD;
+            end
+
+            // Branch
+            7'b1100011: begin
+                ALUSrc = 1'b0; 
+                RegWrite = 1'b0;
+                MemWrite = 1'b0;
+                ResultSrc = 1'b0;
+                Branch = 1'b1;
+                ALUControl = OP_SUB;
             end
             
             default: begin
                 ALUSrc = 1'b0;
                 RegWrite = 1'b0;
                 MemWrite = 1'b0;
-                ResultSrc = 1'b0; 
+                ResultSrc = 1'b0;
+                Branch = 1'b0;
                 ALUControl = OP_ADD;
             end
         endcase
