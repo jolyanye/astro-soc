@@ -4,10 +4,14 @@ module hazard_unit (
     input logic [4:0] rd_E,
     input logic ResultSrc_E,  // = 1 means load word in MEM stage
     input logic PCSrc_E,
-    output logic StallF,  // freezes PC
-    output logic StallD,  // freezes IF/ID reg
+    input logic AXI_Stall,
+    output logic StallF,  
+    output logic StallD,  
+    output logic StallE,
+    output logic StallM,
+    output logic StallW,
     output logic FlushD,
-    output logic FlushE  // disable all control signals
+    output logic FlushE
 );
     logic lwStall;
 
@@ -19,11 +23,14 @@ module hazard_unit (
             lwStall = 1'b0;
         end
     
-        StallF = lwStall;
-        StallD = lwStall;
+        StallF = lwStall | AXI_Stall;
+        StallD = lwStall | AXI_Stall;
+        StallE = AXI_Stall;
+        StallM = AXI_Stall;
+        StallW = AXI_Stall;
 
         // Kill instruction in decode stage if jump instr
-        FlushD = PCSrc_E;
-        FlushE = lwStall | FlushE;
+        FlushD = PCSrc_E & ~AXI_Stall;
+        FlushE = (lwStall | PCSrc_E) & ~AXI_Stall;
     end
 endmodule
