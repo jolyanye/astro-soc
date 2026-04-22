@@ -48,12 +48,26 @@ module cpu_axi_master (
         end
     end
 
+    // CPU Read data capture
+    always_ff @(posedge clk or negedge rst_n) begin
+        if (!rst_n) begin
+            ReadData_M <= 32'd0;
+        end else if (M_AXI_RVALID && M_AXI_RREADY) begin
+            ReadData_M <= M_AXI_RDATA; // Save the data for the CPU
+        end
+    end
+
     always_comb begin
         AXI_Stall = 1'b0;
         next_state = state;
         M_AXI_AWVALID = 1'b0;
         M_AXI_WVALID = 1'b0;
         M_AXI_BREADY = 1'b0;
+        M_AXI_ARVALID = 1'b0;
+        M_AXI_RREADY  = 1'b0;
+        M_AXI_AWADDR  = Address_M;
+        M_AXI_WDATA   = WriteData_M;
+        M_AXI_ARADDR  = Address_M;
 
         case (state)
             IDLE: begin
