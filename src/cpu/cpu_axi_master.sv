@@ -79,6 +79,7 @@ module cpu_axi_master (
                     next_state = READ_REQ;
                 end
             end
+
             WRITE_REQ: begin
                 AXI_Stall = 1'b1;
                 M_AXI_AWVALID = 1'b1;
@@ -88,6 +89,7 @@ module cpu_axi_master (
                     next_state = WRITE_ACK;
                 end
             end
+
             WRITE_ACK: begin
                 AXI_Stall = 1'b1;
                 M_AXI_BREADY = 1'b1;
@@ -96,6 +98,7 @@ module cpu_axi_master (
                     next_state = IDLE;
                 end
             end
+
             READ_REQ: begin
                 AXI_Stall = 1'b1;
                 M_AXI_ARVALID = 1'b1;
@@ -104,6 +107,7 @@ module cpu_axi_master (
                     next_state = READ_ACK;
                 end
             end
+            
             READ_ACK: begin
                 AXI_Stall = 1'b1;
                 M_AXI_RREADY = 1'b1;
