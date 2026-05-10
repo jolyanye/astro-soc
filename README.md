@@ -5,7 +5,4 @@
 - AMBA AXI4-lite interconnect
 
 **Model:**
-- CNN model for galaxy classification
-
-**Verification:**
-- custom UVM testbench
+- CNN model for galaxy classification (Galaxy Zoo Dataset)
