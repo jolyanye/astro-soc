@@ -6,4 +6,4 @@
 - DMA engine (work in progress!)
 
 **Model:**
-- CNN model for galaxy classification (Galaxy Zoo Dataset)
+- CNN model for galaxy classification (Galaxy Zoo Dataset) (work in progress!)
